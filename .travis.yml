@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t ny2cali/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true ny2cali/react-test npm run test -- --watchAll=false
+
+after_success:
+  - docker build -t ny2cali/multi-client ./client
+  - docker build -t ny2cali/multi-nginx ./nginx
+  - docker build -t ny2cali/multi-server ./server
+  - docker build -t ny2cali/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push ny2cali/multi-client
+  - docker push ny2cali/multi-nginx
+  - docker push ny2cali/multi-server
+  - docker push ny2cali/multi-worker
